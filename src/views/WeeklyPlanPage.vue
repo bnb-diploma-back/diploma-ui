@@ -53,7 +53,11 @@ async function fetchPlan() {
     const { data } = await api.get(`${weekBase()}/organize`)
     plan.value = data
   } catch (e) {
-    if (e.response?.status !== 404) {
+    // Backend throws RuntimeException (500) or 404 when no plan exists yet — both are expected
+    const status = e.response?.status
+    const message = e.response?.data?.message || e.response?.data || ''
+    const isNoPlan = status === 404 || (status === 500 && String(message).includes('No organizer found'))
+    if (!isNoPlan) {
       error.value = 'Failed to load study plan'
     }
     plan.value = null

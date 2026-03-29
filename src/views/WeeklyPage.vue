@@ -72,8 +72,14 @@ async function fetchWeekly() {
     const { data } = await api.get(url)
     weeklyData.value = data
   } catch (e) {
-    error.value = 'Failed to load weekly tasks'
-    weeklyData.value = null
+    // 404 or 500 with "not found" means no tasks for this week — show empty, not error
+    const status = e.response?.status
+    if (status === 404 || status === 500) {
+      weeklyData.value = null
+    } else {
+      error.value = 'Failed to load weekly tasks'
+      weeklyData.value = null
+    }
   } finally {
     loading.value = false
   }
