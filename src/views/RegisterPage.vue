@@ -33,10 +33,10 @@ async function submit() {
       <!-- Logo -->
       <div class="text-center mb-8">
         <div class="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg shadow-primary/25">
-          S
+          B
         </div>
         <h1 class="text-2xl font-bold">Create account</h1>
-        <p class="text-text-secondary text-sm mt-1">Join StudyHub as a student</p>
+        <p class="text-text-secondary text-sm mt-1">Join BNB as a student</p>
       </div>
 
       <!-- Form -->

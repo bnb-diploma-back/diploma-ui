@@ -57,10 +57,10 @@ async function logout() {
     <div class="p-6 border-b border-white/10">
       <router-link to="/" class="flex items-center gap-3">
         <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-lg font-bold">
-          S
+          B
         </div>
         <div>
-          <h1 class="text-lg font-bold tracking-tight">StudyHub</h1>
+          <h1 class="text-lg font-bold tracking-tight">BNB</h1>
           <p class="text-xs text-white/50">Academic Planner</p>
         </div>
       </router-link>

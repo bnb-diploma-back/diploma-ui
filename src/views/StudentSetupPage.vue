@@ -97,10 +97,10 @@ onMounted(async () => {
       <!-- Header -->
       <div class="text-center mb-8">
         <div class="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg shadow-primary/25">
-          S
+          B
         </div>
         <h1 class="text-2xl font-bold">Complete Your Profile</h1>
-        <p class="text-text-secondary text-sm mt-1">Set up your student profile to get started with StudyHub</p>
+        <p class="text-text-secondary text-sm mt-1">Set up your student profile to get started with BNB</p>
       </div>
 
       <!-- Form -->
