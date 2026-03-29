@@ -11,9 +11,9 @@ const isAuthPage = computed(() => route.meta.guest === true || route.meta.setup 
   <div v-if="isAuthPage">
     <router-view />
   </div>
-  <div v-else class="flex h-screen overflow-hidden">
+  <div v-else class="h-screen overflow-hidden">
     <AppSidebar />
-    <main class="flex-1 overflow-y-auto">
+    <main class="ml-16 h-screen overflow-y-auto">
       <router-view />
     </main>
   </div>
