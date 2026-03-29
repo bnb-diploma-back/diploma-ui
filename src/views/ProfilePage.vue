@@ -169,7 +169,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-8 max-w-3xl">
+  <div class="p-8">
     <h1 class="text-2xl font-bold mb-2">My Profile</h1>
     <p class="text-text-secondary text-sm mb-8">View and edit your personal and academic information</p>
 
