@@ -158,13 +158,13 @@ onMounted(() => {
             :key="dept.id"
             class="bg-surface rounded-xl border border-border p-4 hover:shadow-sm transition-shadow"
           >
-            <div class="flex items-start justify-between">
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-semibold">{{ dept.code }}</span>
-                  <h3 class="font-medium text-sm">{{ dept.name }}</h3>
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-1 min-w-0">
+                  <span class="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-semibold shrink-0">{{ dept.code }}</span>
+                  <h3 class="font-medium text-sm truncate">{{ dept.name }}</h3>
                 </div>
-                <p v-if="dept.description" class="text-text-secondary text-xs">{{ dept.description }}</p>
+                <p v-if="dept.description" class="text-text-secondary text-xs line-clamp-2">{{ dept.description }}</p>
                 <div v-if="dept.majors?.length" class="flex flex-wrap gap-1.5 mt-2">
                   <span
                     v-for="m in dept.majors"
@@ -175,7 +175,7 @@ onMounted(() => {
                   </span>
                 </div>
               </div>
-              <div class="flex gap-1">
+              <div class="flex gap-1 shrink-0">
                 <button @click="openDeptForm(dept)" class="p-1.5 hover:bg-accent/10 rounded-lg text-text-secondary hover:text-accent transition-colors" title="Edit">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 </button>
@@ -212,18 +212,18 @@ onMounted(() => {
             :key="major.id"
             class="bg-surface rounded-xl border border-border p-4 hover:shadow-sm transition-shadow"
           >
-            <div class="flex items-start justify-between">
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="px-2 py-0.5 bg-secondary/10 text-secondary rounded text-xs font-semibold">{{ major.code }}</span>
-                  <h3 class="font-medium text-sm">{{ major.name }}</h3>
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-1 min-w-0">
+                  <span class="px-2 py-0.5 bg-secondary/10 text-secondary rounded text-xs font-semibold shrink-0">{{ major.code }}</span>
+                  <h3 class="font-medium text-sm truncate">{{ major.name }}</h3>
                 </div>
-                <p v-if="major.description" class="text-text-secondary text-xs">{{ major.description }}</p>
+                <p v-if="major.description" class="text-text-secondary text-xs line-clamp-2">{{ major.description }}</p>
                 <p class="text-text-secondary text-xs mt-1">
                   Dept: <span class="font-medium text-text-primary">{{ major.departmentName }}</span>
                 </p>
               </div>
-              <div class="flex gap-1">
+              <div class="flex gap-1 shrink-0">
                 <button @click="openMajorForm(major)" class="p-1.5 hover:bg-accent/10 rounded-lg text-text-secondary hover:text-accent transition-colors" title="Edit">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 </button>
