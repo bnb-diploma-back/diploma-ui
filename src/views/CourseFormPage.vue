@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/api'
 
@@ -13,6 +13,7 @@ const error = ref(null)
 
 // Lookups
 const departments = ref([])
+const filteredMajors = ref([])
 const allCourses = ref([])
 
 const form = ref({
@@ -20,7 +21,8 @@ const form = ref({
   title: '',
   description: '',
   credits: 3,
-  department: '',
+  departmentId: null,
+  majorId: null,
   instructor: '',
   prerequisites: '',
   objectives: '',
@@ -59,6 +61,36 @@ async function fetchDepartments() {
   } catch (e) { /* ignore */ }
 }
 
+// Load majors for a department
+async function loadMajors(deptId) {
+  if (!deptId) {
+    filteredMajors.value = []
+    return
+  }
+  try {
+    const { data } = await api.get(`/dictionary/departments/${deptId}/majors`)
+    filteredMajors.value = data
+  } catch (e) {
+    filteredMajors.value = []
+  }
+}
+
+// When user changes department, reload majors and reset major if it doesn't belong
+watch(() => form.value.departmentId, async (deptId, oldDeptId) => {
+  if (!deptId) {
+    filteredMajors.value = []
+    form.value.majorId = null
+    return
+  }
+  await loadMajors(deptId)
+  // Only reset major if user actually changed the department (not initial load)
+  if (oldDeptId !== undefined && oldDeptId !== deptId) {
+    if (form.value.majorId && !filteredMajors.value.some(m => m.id === form.value.majorId)) {
+      form.value.majorId = null
+    }
+  }
+})
+
 async function fetchAllCourses() {
   try {
     const { data } = await api.get('/syllabi')
@@ -71,12 +103,17 @@ async function fetchCourse() {
   loading.value = true
   try {
     const { data } = await api.get(`/syllabi/${route.params.id}`)
+    // Pre-load majors before setting form so <select> options exist
+    if (data.departmentId) {
+      await loadMajors(data.departmentId)
+    }
     form.value = {
       courseCode: data.courseCode || '',
       title: data.title || '',
       description: data.description || '',
       credits: data.credits || 3,
-      department: data.department || '',
+      departmentId: data.departmentId || null,
+      majorId: data.majorId || null,
       instructor: data.instructor || '',
       prerequisites: data.prerequisites || '',
       objectives: data.objectives || '',
@@ -170,6 +207,9 @@ async function submit() {
     for (const key of ['description', 'objectives', 'learningOutcomes', 'assessmentCriteria', 'requiredTextbooks', 'recommendedReading', 'startDate', 'endDate']) {
       if (!payload[key]) payload[key] = null
     }
+    // Ensure IDs are null not empty
+    if (!payload.departmentId) payload.departmentId = null
+    if (!payload.majorId) payload.majorId = null
     if (isEdit.value) {
       await api.put(`/syllabi/${route.params.id}`, payload)
     } else {
@@ -231,13 +271,17 @@ onMounted(async () => {
           </div>
           <div>
             <label class="block text-sm font-medium mb-1.5">Department</label>
-            <select v-model="form.department" class="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white">
-              <option value="">Select department...</option>
-              <option v-for="d in departments" :key="d.id" :value="d.name">{{ d.code }} — {{ d.name }}</option>
+            <select v-model="form.departmentId" class="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white">
+              <option :value="null">Select department...</option>
+              <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.code }} — {{ d.name }}</option>
             </select>
           </div>
           <div>
-            <!-- spacer for grid alignment -->
+            <label class="block text-sm font-medium mb-1.5">Major</label>
+            <select v-model="form.majorId" :disabled="!form.departmentId" class="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white disabled:opacity-50 disabled:cursor-not-allowed">
+              <option :value="null">{{ form.departmentId ? 'Select major...' : 'Select department first' }}</option>
+              <option v-for="m in filteredMajors" :key="m.id" :value="m.id">{{ m.code }} — {{ m.name }}</option>
+            </select>
           </div>
           <div class="md:col-span-2">
             <label class="block text-sm font-medium mb-1.5">Description</label>

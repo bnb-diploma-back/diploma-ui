@@ -53,7 +53,8 @@ onMounted(fetchCourse)
             <div class="flex flex-wrap gap-2 mt-4">
               <span class="px-2.5 py-1 bg-secondary/10 text-secondary rounded-lg text-xs font-medium">{{ course.credits }} credits</span>
               <span v-if="course.semester" class="px-2.5 py-1 bg-accent/10 text-accent rounded-lg text-xs font-medium">{{ course.semester }} {{ course.academicYear }}</span>
-              <span v-if="course.department" class="px-2.5 py-1 bg-surface-dark rounded-lg text-xs font-medium text-text-secondary">{{ course.department }}</span>
+              <span v-if="course.departmentName" class="px-2.5 py-1 bg-surface-dark rounded-lg text-xs font-medium text-text-secondary">{{ course.departmentName }}</span>
+              <span v-if="course.majorName" class="px-2.5 py-1 bg-surface-dark rounded-lg text-xs font-medium text-text-secondary">{{ course.majorName }}</span>
             </div>
           </div>
           <router-link
