@@ -29,6 +29,11 @@ const routes = [
     component: () => import('@/views/DashboardPage.vue'),
   },
   {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/ProfilePage.vue'),
+  },
+  {
     path: '/dictionary',
     name: 'Dictionary',
     component: () => import('@/views/DictionaryPage.vue'),
@@ -62,21 +67,25 @@ const routes = [
     path: '/weekly',
     name: 'Weekly',
     component: () => import('@/views/WeeklyPage.vue'),
+    meta: { studentOnly: true },
   },
   {
     path: '/weekly/plan',
     name: 'WeeklyPlan',
     component: () => import('@/views/WeeklyPlanPage.vue'),
+    meta: { studentOnly: true },
   },
   {
     path: '/careers',
     name: 'Careers',
     component: () => import('@/views/CareersPage.vue'),
+    meta: { studentOnly: true },
   },
   {
     path: '/chat',
     name: 'Chat',
     component: () => import('@/views/ChatPage.vue'),
+    meta: { studentOnly: true },
   },
   {
     path: '/courses',
@@ -139,6 +148,11 @@ router.beforeEach((to, from, next) => {
 
   // Admin-only pages: redirect to home if student
   if (to.meta.adminOnly && !isAdmin) {
+    return next('/')
+  }
+
+  // Student-only pages: redirect to home if admin
+  if (to.meta.studentOnly && isAdmin) {
     return next('/')
   }
 
