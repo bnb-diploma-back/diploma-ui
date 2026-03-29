@@ -11,6 +11,9 @@ export default defineConfig({
     vueDevTools(),
     tailwindcss(),
   ],
+  define: {
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -19,6 +22,10 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': 'http://localhost:8070',
+      '/ws': {
+        target: 'http://localhost:8070',
+        ws: true,
+      },
     },
   },
 })

@@ -1,14 +1,22 @@
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue'
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client/dist/sockjs'
 import { auth } from '@/stores/auth'
 
 const studentId = auth.studentId
+const isAdmin = auth.isAdmin
+const adminStudentId = ref(auth.studentId.value || '1')
+
+const effectiveStudentId = computed(() => {
+  return isAdmin.value ? adminStudentId.value : studentId.value
+})
+
 const messages = ref([])
 const input = ref('')
 const sending = ref(false)
 const connected = ref(false)
+const connectionError = ref(null)
 const chatContainer = ref(null)
 
 let stompClient = null
@@ -29,20 +37,26 @@ function scrollToBottom() {
 }
 
 function connect() {
+  connectionError.value = null
+
   stompClient = new Client({
-    webSocketFactory: () => new SockJS('http://localhost:8070/ws/chat'),
+    webSocketFactory: () => new SockJS('/ws/chat'),
     reconnectDelay: 5000,
+    debug: (str) => {
+      // uncomment for debugging: console.log('STOMP:', str)
+    },
     onConnect: () => {
       connected.value = true
+      connectionError.value = null
 
       stompClient.subscribe('/user/queue/chat', (message) => {
         const response = JSON.parse(message.body)
-        const lastMsg = messages.value[messages.value.length - 1]
 
         switch (response.type) {
-          case 'CHUNK':
-            if (lastMsg && lastMsg.role === 'ai' && lastMsg.streaming) {
-              lastMsg.content += response.content
+          case 'CHUNK': {
+            const last = messages.value[messages.value.length - 1]
+            if (last && last.role === 'ai' && last.streaming) {
+              last.content += response.content
             } else {
               messages.value.push({
                 role: 'ai',
@@ -53,14 +67,17 @@ function connect() {
             }
             scrollToBottom()
             break
+          }
 
-          case 'DONE':
-            if (lastMsg && lastMsg.role === 'ai') {
-              lastMsg.streaming = false
+          case 'DONE': {
+            const last = messages.value[messages.value.length - 1]
+            if (last && last.role === 'ai') {
+              last.streaming = false
             }
             sending.value = false
             scrollToBottom()
             break
+          }
 
           case 'ERROR':
             messages.value.push({
@@ -77,8 +94,13 @@ function connect() {
     onDisconnect: () => {
       connected.value = false
     },
-    onStompError: () => {
+    onStompError: (frame) => {
       connected.value = false
+      connectionError.value = frame.headers?.message || 'Connection error'
+    },
+    onWebSocketError: () => {
+      connected.value = false
+      connectionError.value = 'Cannot connect to chat server'
     },
   })
 
@@ -101,7 +123,7 @@ function sendMessage(text) {
   stompClient.publish({
     destination: '/app/chat',
     body: JSON.stringify({
-      studentId: studentId.value,
+      studentId: effectiveStudentId.value,
       message: msg,
     }),
   })
@@ -112,6 +134,13 @@ function handleKeydown(e) {
     e.preventDefault()
     sendMessage()
   }
+}
+
+function reconnect() {
+  if (stompClient) {
+    stompClient.deactivate()
+  }
+  connect()
 }
 
 onMounted(connect)
@@ -139,17 +168,32 @@ onUnmounted(() => {
             <p class="text-xs text-text-secondary">Knows your courses, grades, and goals</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full" :class="connected ? 'bg-success' : 'bg-danger'"></span>
-          <span class="text-xs text-text-secondary">{{ connected ? 'Connected' : 'Disconnected' }}</span>
+        <div class="flex items-center gap-3">
+          <!-- Admin student selector -->
+          <div v-if="isAdmin" class="flex items-center gap-2">
+            <label class="text-xs text-text-secondary">Student:</label>
+            <input
+              v-model="adminStudentId"
+              class="px-2 py-1 border border-border rounded-lg text-xs w-16 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" :class="connected ? 'bg-success' : 'bg-danger'"></span>
+            <span class="text-xs text-text-secondary">{{ connected ? 'Connected' : 'Disconnected' }}</span>
+            <button v-if="!connected" @click="reconnect" class="text-xs text-primary hover:text-primary-dark font-medium ml-1">Retry</button>
+          </div>
         </div>
+      </div>
+      <!-- Connection error -->
+      <div v-if="connectionError" class="mt-3 bg-danger/10 text-danger px-3 py-2 rounded-lg text-xs">
+        {{ connectionError }}
       </div>
     </div>
 
     <!-- Messages -->
     <div ref="chatContainer" class="flex-1 overflow-y-auto px-8 py-6 space-y-4">
       <!-- Empty state -->
-      <div v-if="messages.length === 0" class="flex flex-col items-center justify-center h-full">
+      <div v-if="messages.length === 0 && !connectionError" class="flex flex-col items-center justify-center h-full">
         <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
           <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -164,7 +208,8 @@ onUnmounted(() => {
             v-for="s in suggestions"
             :key="s"
             @click="sendMessage(s)"
-            class="px-4 py-2 bg-surface border border-border rounded-xl text-sm text-text-secondary hover:border-primary hover:text-primary transition-colors"
+            :disabled="!connected"
+            class="px-4 py-2 bg-surface border border-border rounded-xl text-sm text-text-secondary hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
           >
             {{ s }}
           </button>
