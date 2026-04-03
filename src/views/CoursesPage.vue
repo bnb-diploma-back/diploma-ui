@@ -10,6 +10,8 @@ const courses = ref([])
 const loading = ref(true)
 const error = ref(null)
 const deleteModal = ref({ show: false, course: null })
+const syncing = ref(false)
+const syncResult = ref(null)
 
 // Department/major filters for the main course grid (student view)
 const departments = ref([])
@@ -32,10 +34,22 @@ function getDeptName(deptId) {
   return d ? d.name : null
 }
 
+// Sort: alphabetical by courseCode, but MDE* courses go to the bottom
+function sortCourses(list) {
+  return list.slice().sort((a, b) => {
+    const aIsMde = a.courseCode?.toUpperCase().startsWith('MDE') ? 1 : 0
+    const bIsMde = b.courseCode?.toUpperCase().startsWith('MDE') ? 1 : 0
+    if (aIsMde !== bIsMde) return aIsMde - bIsMde
+    return (a.courseCode || '').localeCompare(b.courseCode || '')
+  })
+}
+
 // Filtered courses for main grid
 const displayedCourses = computed(() => {
-  if (!filterDeptId.value) return courses.value
-  return courses.value.filter(c => c.departmentId === filterDeptId.value)
+  const filtered = filterDeptId.value
+    ? courses.value.filter(c => c.departmentId === filterDeptId.value)
+    : courses.value
+  return sortCourses(filtered)
 })
 
 // Registration modal state
@@ -51,8 +65,10 @@ const removedCourses = ref(new Set()) // syllabusIds to unenroll
 
 // Courses filtered in registration modal
 const regFilteredCourses = computed(() => {
-  if (!regDeptId.value) return courses.value
-  return courses.value.filter(c => c.departmentId === regDeptId.value)
+  const filtered = regDeptId.value
+    ? courses.value.filter(c => c.departmentId === regDeptId.value)
+    : courses.value
+  return sortCourses(filtered)
 })
 
 const selectedCount = computed(() => Object.keys(selectedCourses.value).length)
@@ -86,6 +102,21 @@ async function fetchCourses() {
     error.value = 'Failed to load courses'
   } finally {
     loading.value = false
+  }
+}
+
+async function syncFromParser() {
+  syncing.value = true
+  syncResult.value = null
+  error.value = null
+  try {
+    const { data } = await api.post('/parser/sync')
+    syncResult.value = data
+    await fetchCourses()
+  } catch (e) {
+    error.value = e.response?.data?.message || 'Failed to sync courses from parser'
+  } finally {
+    syncing.value = false
   }
 }
 
@@ -248,6 +279,17 @@ onMounted(async () => {
           </svg>
           Registration
         </button>
+        <button
+          v-if="isAdmin"
+          @click="syncFromParser"
+          :disabled="syncing"
+          class="inline-flex items-center gap-2 border border-border hover:bg-surface-dark text-text px-5 py-2.5 rounded-xl font-medium text-sm transition-colors disabled:opacity-50"
+        >
+          <svg class="w-5 h-5" :class="{ 'animate-spin': syncing }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {{ syncing ? 'Syncing...' : 'Sync Courses' }}
+        </button>
         <router-link
           v-if="isAdmin"
           to="/courses/new"
@@ -276,6 +318,16 @@ onMounted(async () => {
         </select>
       </div>
       <span v-if="filterDeptId" class="text-xs text-text-secondary">{{ displayedCourses.length }} course{{ displayedCourses.length !== 1 ? 's' : '' }} found</span>
+    </div>
+
+    <!-- Sync Result -->
+    <div v-if="syncResult" class="bg-success/10 text-success px-4 py-3 rounded-xl mb-6 text-sm flex items-center justify-between">
+      <span>Sync completed successfully. {{ JSON.stringify(syncResult) }}</span>
+      <button @click="syncResult = null" class="ml-3 hover:text-success/70 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
 
     <!-- Error -->

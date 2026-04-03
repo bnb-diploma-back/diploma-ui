@@ -39,19 +39,44 @@ const form = ref({
 
 // Prerequisites as array of selected course codes for the UI
 const selectedPrereqs = ref([])
+const prereqSearch = ref('')
 
 // Other courses available for prerequisite selection (exclude current course)
 const availablePrereqs = computed(() => {
   return allCourses.value.filter(c => c.courseCode !== form.value.courseCode)
 })
 
-function togglePrereq(courseCode) {
-  const idx = selectedPrereqs.value.indexOf(courseCode)
-  if (idx >= 0) {
-    selectedPrereqs.value.splice(idx, 1)
-  } else {
+// Sort: alphabetical by courseCode, MDE* courses at the bottom
+function sortCourses(list) {
+  return list.slice().sort((a, b) => {
+    const aIsMde = a.courseCode?.toUpperCase().startsWith('MDE') ? 1 : 0
+    const bIsMde = b.courseCode?.toUpperCase().startsWith('MDE') ? 1 : 0
+    if (aIsMde !== bIsMde) return aIsMde - bIsMde
+    return (a.courseCode || '').localeCompare(b.courseCode || '')
+  })
+}
+
+// Filtered suggestions based on search input (only show when typing)
+const prereqSuggestions = computed(() => {
+  if (!prereqSearch.value.trim()) return []
+  const q = prereqSearch.value.toLowerCase()
+  const filtered = availablePrereqs.value.filter(c =>
+    !selectedPrereqs.value.includes(c.courseCode) &&
+    (c.courseCode.toLowerCase().includes(q) || c.title.toLowerCase().includes(q))
+  )
+  return sortCourses(filtered)
+})
+
+function addPrereq(courseCode) {
+  if (!selectedPrereqs.value.includes(courseCode)) {
     selectedPrereqs.value.push(courseCode)
   }
+  prereqSearch.value = ''
+}
+
+function removePrereq(courseCode) {
+  const idx = selectedPrereqs.value.indexOf(courseCode)
+  if (idx >= 0) selectedPrereqs.value.splice(idx, 1)
 }
 
 async function fetchDepartments() {
@@ -293,24 +318,55 @@ onMounted(async () => {
       <!-- Prerequisites -->
       <div class="bg-surface rounded-2xl shadow-sm border border-border p-6">
         <h2 class="font-semibold mb-4">Prerequisites</h2>
-        <p class="text-text-secondary text-xs mb-3">Select courses that students must complete before taking this course.</p>
-        <div v-if="availablePrereqs.length === 0" class="text-text-secondary text-sm">No other courses available.</div>
-        <div v-else class="flex flex-wrap gap-2">
-          <button
-            v-for="c in availablePrereqs"
-            :key="c.id"
-            type="button"
-            @click="togglePrereq(c.courseCode)"
-            class="px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-200"
-            :class="selectedPrereqs.includes(c.courseCode)
-              ? 'bg-primary text-white border-primary shadow-sm'
-              : 'bg-white text-text-secondary border-border hover:border-primary hover:text-primary'"
+        <p class="text-text-secondary text-xs mb-3">Search and select courses that students must complete before taking this course.</p>
+
+        <!-- Selected prerequisites chips -->
+        <div v-if="selectedPrereqs.length" class="flex flex-wrap gap-2 mb-3">
+          <span
+            v-for="code in selectedPrereqs"
+            :key="code"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium"
           >
-            {{ c.courseCode }} — {{ c.title }}
-          </button>
+            {{ code }}
+            <button type="button" @click="removePrereq(code)" class="hover:text-white/70 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </span>
         </div>
-        <div v-if="selectedPrereqs.length" class="mt-3 text-xs text-text-secondary">
-          Selected: <span class="font-medium text-text-primary">{{ selectedPrereqs.join(', ') }}</span>
+
+        <!-- Search input -->
+        <div class="relative">
+          <input
+            v-model="prereqSearch"
+            type="text"
+            placeholder="Type to search courses..."
+            class="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+          />
+          <!-- Suggestions dropdown -->
+          <div
+            v-if="prereqSuggestions.length"
+            class="absolute z-10 left-0 right-0 mt-1 bg-surface border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto"
+          >
+            <button
+              v-for="c in prereqSuggestions"
+              :key="c.id"
+              type="button"
+              @click="addPrereq(c.courseCode)"
+              class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-dark transition-colors flex items-center gap-2"
+            >
+              <span class="font-semibold text-primary">{{ c.courseCode }}</span>
+              <span class="text-text-secondary">{{ c.title }}</span>
+            </button>
+          </div>
+          <!-- No results -->
+          <div
+            v-if="prereqSearch.trim() && !prereqSuggestions.length"
+            class="absolute z-10 left-0 right-0 mt-1 bg-surface border border-border rounded-xl shadow-lg px-4 py-3 text-sm text-text-secondary"
+          >
+            No matching courses found
+          </div>
         </div>
       </div>
 
