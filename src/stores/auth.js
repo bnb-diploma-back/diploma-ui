@@ -44,7 +44,6 @@ export const auth = {
 
   async register(payload) {
     const { data } = await api.post('/auth/register', payload)
-    this.setAuth(data)
     return data
   },
 

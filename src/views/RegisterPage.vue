@@ -18,7 +18,7 @@ async function submit() {
   error.value = null
   try {
     await auth.register(form.value)
-    router.push('/')
+    router.push({ name: 'VerifyEmail', query: { email: form.value.email } })
   } catch (e) {
     error.value = e.response?.data?.message || e.response?.data || 'Registration failed'
   } finally {

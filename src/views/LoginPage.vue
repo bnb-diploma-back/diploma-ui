@@ -16,7 +16,13 @@ async function submit() {
     await auth.login(email.value, password.value)
     router.push('/')
   } catch (e) {
-    error.value = e.response?.data?.message || e.response?.data || 'Invalid email or password'
+    const status = e.response?.status
+    const message = e.response?.data?.message || e.response?.data || ''
+    if ((status === 401 || status === 403) && typeof message === 'string' && message.toLowerCase().includes('verif')) {
+      router.push({ name: 'VerifyEmail', query: { email: email.value } })
+      return
+    }
+    error.value = message || 'Invalid email or password'
   } finally {
     loading.value = false
   }
