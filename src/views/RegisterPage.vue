@@ -13,9 +13,18 @@ const form = ref({
 const error = ref(null)
 const loading = ref(false)
 
+function isValidSduEmail(email) {
+  return email.endsWith('@stu.sdu.edu.kz') || email.endsWith('@sdu.edu.kz')
+}
+
 async function submit() {
   loading.value = true
   error.value = null
+  if (!isValidSduEmail(form.value.email)) {
+    error.value = 'Only SDU email addresses are allowed (@stu.sdu.edu.kz or @sdu.edu.kz)'
+    loading.value = false
+    return
+  }
   try {
     await auth.register(form.value)
     router.push({ name: 'VerifyEmail', query: { email: form.value.email } })
@@ -70,7 +79,7 @@ async function submit() {
               v-model="form.email"
               type="email"
               required
-              placeholder="you@university.edu"
+              placeholder="you@stu.sdu.edu.kz"
               class="w-full px-4 py-3 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
             />
           </div>
