@@ -27,9 +27,9 @@ const navItems = computed(() => {
 
   if (!isAdmin.value) {
     items.push(
-      { name: 'Weekly', path: '/weekly', icon: 'calendar' },
-      { name: 'Careers', path: '/careers', icon: 'briefcase' },
-      { name: 'AI Chat', path: '/chat', icon: 'chat' },
+      { name: 'Weekly Planner', path: '/weekly', icon: 'calendar' },
+      { name: 'Career Compass', path: '/careers', icon: 'briefcase' },
+      { name: 'AI Assistant', path: '/chat', icon: 'chat' },
     )
   }
 
